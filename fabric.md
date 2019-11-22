@@ -58,7 +58,7 @@
 
   
 
-## 步骤详解
+## 步骤图解
 
 - 启动六台节点
 
@@ -105,11 +105,176 @@
 
 ## 新建项目
 
+- 创建项目文件夹并进入这个文件夹中
+
+  ```
+  mkdir my-network
+  cd my-network
+  ```
+
+  
+
 ## 创建crypto-config.yaml
+
+- 创建crypto-config.yaml并打开编辑
+
+  ```
+  touch crypto-config.yaml
+  vim crypto-config.yaml
+  ```
+
+  
+
+- 复制并粘贴以下内容
+
+  ```
+  OrdererOrgs:
+    - Name: Orderer
+      Domain: example.com
+      EnableNodeOUs: true
+      Specs:
+        - Hostname: orderer
+        - Hostname: orderer2
+        - Hostname: orderer3
+        - Hostname: orderer4
+        - Hostname: orderer5
+  
+  PeerOrgs:
+    - Name: Org1
+      Domain: org1.example.com
+      EnableNodeOUs: true
+      Template:
+        Count: 2
+      Users:
+        Count: 1
+    - Name: Org2
+      Domain: org2.example.com
+      EnableNodeOUs: true
+      Template:
+        Count: 2
+      Users:
+        Count: 1
+  
+  ```
+
+  
 
 ## 创世区块配置和生成
 
+- 配置生成尝试区块
+
+  ```
+  export PATH=/root/fabric-samples/bin:$PATH
+  cryptogen generate --config ./crypto-config.yaml
+  ```
+
+  
+
 ## 配置docker compose文件和基础文件的加入
+
+- 创建docker-compose-cli.yaml文件
+
+  ```
+  touch docker-compose-cli.yaml
+  vim docker-compose-cli.yaml
+  ```
+
+- 配置docker-compose-cli.yaml文件
+
+  ```
+  version: '2'
+  
+  volumes:
+    orderer.example.com:
+    peer0.org1.example.com:
+    peer1.org1.example.com:
+    peer0.org2.example.com:
+    peer1.org2.example.com:
+  
+  networks:
+    byfn:
+  
+  services:
+  
+    orderer.example.com:
+      extends:
+        file:   base/docker-compose-base.yaml
+        service: orderer.example.com
+      container_name: orderer.example.com
+      networks:
+        - byfn
+  
+    peer0.org1.example.com:
+      container_name: peer0.org1.example.com
+      extends:
+        file:  base/docker-compose-base.yaml
+        service: peer0.org1.example.com
+      networks:
+        - byfn
+  
+    peer1.org1.example.com:
+      container_name: peer1.org1.example.com
+      extends:
+        file:  base/docker-compose-base.yaml
+        service: peer1.org1.example.com
+      networks:
+        - byfn
+  
+    peer0.org2.example.com:
+      container_name: peer0.org2.example.com
+      extends:
+        file:  base/docker-compose-base.yaml
+        service: peer0.org2.example.com
+      networks:
+        - byfn
+  
+    peer1.org2.example.com:
+      container_name: peer1.org2.example.com
+      extends:
+        file:  base/docker-compose-base.yaml
+        service: peer1.org2.example.com
+      networks:
+        - byfn
+  
+    cli:
+      container_name: cli
+      image: hyperledger/fabric-tools:$IMAGE_TAG
+      tty: true
+      stdin_open: true
+      environment:
+        - SYS_CHANNEL=$SYS_CHANNEL
+        - GOPATH=/opt/gopath
+        - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+        #- FABRIC_LOGGING_SPEC=DEBUG
+        - FABRIC_LOGGING_SPEC=INFO
+        - CORE_PEER_ID=cli
+        - CORE_PEER_ADDRESS=peer0.org1.example.com:7051
+        - CORE_PEER_LOCALMSPID=Org1MSP
+        - CORE_PEER_TLS_ENABLED=true
+        - CORE_PEER_TLS_CERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/server.crt
+        - CORE_PEER_TLS_KEY_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/server.key
+        - CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
+        - CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
+      working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+      command: /bin/bash
+      volumes:
+          - /var/run/:/host/var/run/
+          - ./../chaincode/:/opt/gopath/src/github.com/chaincode
+          - ./crypto-config:/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/
+          - ./scripts:/opt/gopath/src/github.com/hyperledger/fabric/peer/scripts/
+          - ./channel-artifacts:/opt/gopath/src/github.com/hyperledger/fabric/peer/channel-artifacts
+      depends_on:
+        - orderer.example.com
+        - peer0.org1.example.com
+        - peer1.org1.example.com
+        - peer0.org2.example.com
+        - peer1.org2.example.com
+      networks:
+        - byfn
+  
+  ```
+
+  
 
 ## 创建通道
 
