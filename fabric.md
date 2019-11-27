@@ -46,7 +46,7 @@ fabric ca就是生成ca和创建账户的工具. 可以根据自己的安全策�
 这个证书有效期是多久,分发策略是什么,都可以通过fabric ca来控制.
 fabirc ca支持链式继承,   假如某个证书被黑客攻陷, 上一级别的ca可以很容易作废这个证书.
 通过ca认证, 我们可以查询每一笔交易的参与者,并且参与者无法抵赖. 这个特性是密码学保证的
-hyperledger的组件是可插拔的, 你完全可以不实用fabric ca, 
+hyperledger的组件是可插拔的, 你完全可以不使用fabric ca, 
 你可以自己建立一套认证体系,用于管理用户.
 设置用户属性,签名transaction.
 但是fabric ca是一个非常高质量,企业级的组件, 推荐大家使用.
@@ -60,8 +60,8 @@ MSP是Membership Service Provider - 是可插拔的接口，它用于支持各�
 签名生成和验证
 而 Fabric-CA 用于生成证书和密钥，以真正的初始化MSP。 Fabric-CA是用于身份管理的MSP接口的默认实现。
 msp 定义
-who you are 你是谁
-which network you are 你在什么网络
+你是谁
+你在什么网络
 msp的证书是由fabric ca来颁发的
 每个peer都需要msp的证书
 每个order都需要msp的证书.
@@ -922,7 +922,7 @@ Profiles:
           # the following setting starts chaincode containers on the same
           # bridge network as the peers
           # https://docs.docker.com/compose/networking/
-          - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=${COMPOSE_PROJECT_NAME}_byfn
+          - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=my-network_byfn
           - FABRIC_LOGGING_SPEC=INFO
           #- FABRIC_LOGGING_SPEC=DEBUG
           - CORE_PEER_TLS_ENABLED=true
@@ -1005,20 +1005,20 @@ export CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric
 export CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
 peer channel join -b mychannel.block
 
-export CORE_PEER_ADDRESS=peer1.org1.example.com:7051
+export CORE_PEER_ADDRESS=peer1.org1.example.com:8051
 export CORE_PEER_LOCALMSPID="Org1MSP"
 export CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer1.org1.example.com/tls/ca.crt
 export CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
 peer channel join -b mychannel.block
 
-export CORE_PEER_ADDRESS=peer0.org2.example.com:7051
+export CORE_PEER_ADDRESS=peer0.org2.example.com:9051
 export CORE_PEER_LOCALMSPID="Org2MSP"
 export CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt
 export CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp
 peer channel join -b mychannel.block
 
 
-export CORE_PEER_ADDRESS=peer1.org2.example.com:7051
+export CORE_PEER_ADDRESS=peer1.org2.example.com:10051
 export CORE_PEER_LOCALMSPID="Org2MSP"
 export CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/peers/peer1.org2.example.com/tls/ca.crt
 export CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp
@@ -1037,20 +1037,20 @@ export CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/pee
 peer chaincode install -n mycc -v 1.0 -l node -p /opt/gopath/src/github.com/chaincode/chaincode_example02/node
 
 
-export CORE_PEER_ADDRESS=peer1.org1.example.com:7051
+export CORE_PEER_ADDRESS=peer1.org1.example.com:8051
 export CORE_PEER_LOCALMSPID="Org1MSP"
 export CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer1.org1.example.com/tls/ca.crt
 export CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
 peer chaincode install -n mycc -v 1.0 -l node -p /opt/gopath/src/github.com/chaincode/chaincode_example02/node
 
-export CORE_PEER_ADDRESS=peer0.org2.example.com:7051
+export CORE_PEER_ADDRESS=peer0.org2.example.com:9051
 export CORE_PEER_LOCALMSPID="Org2MSP"
 export CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt
 export CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp
 peer chaincode install -n mycc -v 1.0 -l node -p /opt/gopath/src/github.com/chaincode/chaincode_example02/node
 
 
-export CORE_PEER_ADDRESS=peer1.org2.example.com:7051
+export CORE_PEER_ADDRESS=peer1.org2.example.com:10051
 export CORE_PEER_LOCALMSPID="Org2MSP"
 export CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/peers/peer1.org2.example.com/tls/ca.crt
 export CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp
@@ -1085,8 +1085,6 @@ peer chaincode invoke -o orderer.example.com:7050 -C mychannel -n mycc -c '{"Arg
 ```
 peer chaincode query -C mychannel -n mycc -c '{"Args":["query","a"]}'
 ```
-
-
 
 # 链码的编写
 
