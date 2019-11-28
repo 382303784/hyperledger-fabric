@@ -17,11 +17,7 @@
 
 ## 数据完整性和安全性
 
-hyperledger是一个分布式系统.
-没有单点故障, 没有单点的信息存放,
-每个节点都保存了全部的数据.
-所有的节点都保存了一致的区块链数据, 不可篡改.
-每个节点存放了所有的转账记录(账本) 
+hyperledger是一个分布式系统.没有单点故障, 没有单点的信息存放,每个节点都保存了全部的数据.所有的节点都保存了一致的区块链数据, 不可篡改.每个节点存放了所有的转账记录(账本) 
 假设你的商业模式是使用hyperledger记录某个资产的所有者,
 因为某种原因, 你错误的登记了这个资产的所有人.
 在hyperledger里面你没法把这个错误的记录删除.
@@ -90,7 +86,7 @@ order做好了block之后,把数据发给peer, peer接收到block之后就把数
 
 在hyperledger区块链中,挖矿的工作,共识的达成是有orderer节点来完成的,orderer负责避免双花,生成区块.
 
-## hyperledger的channel
+## Hyperledger的channel
 
 每个channel可以理解成独立的hyperledger fabric的实例
 channel是hyperledger fabirc里面一个非常重要的概念, 在其他的区块链系统里面是没有channel的概念的
@@ -99,7 +95,7 @@ channel是hyperledger fabirc里面一个非常重要的概念, 在其他的区�
 不同的channel会有不同的规则,策略,智能合约,他们是完全独立的.
 channel 可以理解成private subnet, 有点类似微信的群.
 
-## chaincode
+## Chaincode
 
 chaincode 就是智能合约  是应用程序,  是代码  是你的business logic, 他的作用是用来更新账本数据的.
 sdk发起一个transaction,  peer执行这个chaincode
@@ -122,7 +118,7 @@ chaincode需要先安装, 然后必须要实例化,  实例化chaincode会启动
 - 实例化 init
 - 调用 invoke
 
-## chaincode的背书策略
+## Chaincode的背书策略
 
 实例化chaincode需要指定背书策略. 背书策略是hpyerledger中一个很强大的功能.
 是所有的peer都要验证,还是大多数peer同意, 还是至少一个peer同意,  通过and或者or 这样的关键字定义背书策略.
@@ -247,6 +243,8 @@ orderer节点排序后, 第一个买大米的操作是合法的, 但是第二个
 
 - 启动六台节点
 
+  ![avatar](https://upload-images.jianshu.io/upload_images/13765375-9271a876df3e2b07.jpg)
+
   ![avatar](https://upload-images.jianshu.io/upload_images/13765375-7440db5feef1fc72.png)
 
 - 创建channel
@@ -254,6 +252,8 @@ orderer节点排序后, 第一个买大米的操作是合法的, 但是第二个
   ![avatar](https://upload-images.jianshu.io/upload_images/13765375-1562662cdfac5970.jpg)
 
 - 让每个peer加入channel
+
+  ![avatar](https://upload-images.jianshu.io/upload_images/13765375-f9b200d0074d9dc8.jpg)
 
   ![avatar](https://upload-images.jianshu.io/upload_images/13765375-23a80a30d547ad25.png)
 
@@ -263,6 +263,8 @@ orderer节点排序后, 第一个买大米的操作是合法的, 但是第二个
 
 - 安装链码
 
+  ![avatar](https://upload-images.jianshu.io/upload_images/13765375-d768d6358d0dffa8.jpg)
+
   ![avatar](https://upload-images.jianshu.io/upload_images/13765375-e595091bc44dc99f.png)
 
 - 实例化链码
@@ -270,6 +272,12 @@ orderer节点排序后, 第一个买大米的操作是合法的, 但是第二个
   ![avatar](https://upload-images.jianshu.io/upload_images/13765375-550ae95902ae5074.png)
 
 - 执行链码
+
+  ![avatar](https://upload-images.jianshu.io/upload_images/13765375-7e827d2aa64d3540.jpg)
+
+  ![avatar](https://upload-images.jianshu.io/upload_images/13765375-471038caed4eab95.jpg)
+
+  ![avatar](https://upload-images.jianshu.io/upload_images/13765375-c5f1ac62dba56408.jpg)
 
   ![avatar](https://upload-images.jianshu.io/upload_images/13765375-f4bd841e7542a395.png)
 
