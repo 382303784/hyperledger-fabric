@@ -128,7 +128,7 @@ sdk ,  nodejs java go , 命令行cli, 什么sdk都行.
 
 ## 网络拓补
 
-![avatar](https://upload-images.jianshu.io/upload_images/13765375-887b2b669cea6d6e.jpg)
+![avatar](https://upload-images.jianshu.io/upload_images/13765375-ae6c0846e51fc422.jpg)
 
 - 客户端：应用程序/SDK/命令行工具
 - Peer：Anchor/Endorser/Committer
@@ -137,17 +137,25 @@ sdk ,  nodejs java go , 命令行cli, 什么sdk都行.
 
 ## 交易流程
 
+![avatar](https://upload-images.jianshu.io/upload_images/13765375-61da602ef38032e6.jpg)
+
 # 共识排序
 
 ## 共识机制
 
+![avatar](https://upload-images.jianshu.io/upload_images/13765375-a022ca2888ebd10a.jpg)
+
 # 账本存储
+
+![avatar](https://upload-images.jianshu.io/upload_images/13765375-94d3ec387a0534f0.png)
 
 ## 概述
 
 ## 读写集
 
 # 智能合约（链码）
+
+![avatar](https://upload-images.jianshu.io/upload_images/13765375-16ae05bf6a95f9ce.jpg)
 
 # 创建我的第一个网络
 
