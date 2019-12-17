@@ -244,6 +244,143 @@
 
 - 链码代码
 
+  ```js
+  const shim = require('fabric-shim');
+  const util = require('util');
+  
+  var Chaincode = class {
+  
+    // Initialize the chaincode
+    async Init(stub) {
+      console.info('========= example02 Init =========');
+      let ret = stub.getFunctionAndParameters();
+      console.info(ret);
+      let args = ret.params;
+      // initialise only if 4 parameters passed.
+      if (args.length != 4) {
+        return shim.error('Incorrect number of arguments. Expecting 4');
+      }
+  
+      let A = args[0];
+      let B = args[2];
+      let Aval = args[1];
+      let Bval = args[3];
+  
+      if (typeof parseInt(Aval) !== 'number' || typeof parseInt(Bval) !== 'number') {
+        return shim.error('Expecting integer value for asset holding');
+      }
+  
+      try {
+        await stub.putState(A, Buffer.from(Aval));
+        try {
+          await stub.putState(B, Buffer.from(Bval));
+          return shim.success();
+        } catch (err) {
+          return shim.error(err);
+        }
+      } catch (err) {
+        return shim.error(err);
+      }
+    }
+  
+    async Invoke(stub) {
+      let ret = stub.getFunctionAndParameters();
+      console.info(ret);
+      let method = this[ret.fcn];
+      if (!method) {
+        console.log('no method of name:' + ret.fcn + ' found');
+        return shim.success();
+      }
+      try {
+        let payload = await method(stub, ret.params);
+        return shim.success(payload);
+      } catch (err) {
+        console.log(err);
+        return shim.error(err);
+      }
+    }
+  
+    async invoke(stub, args) {
+      if (args.length != 3) {
+        throw new Error('Incorrect number of arguments. Expecting 3');
+      }
+  
+      let A = args[0];
+      let B = args[1];
+      if (!A || !B) {
+        throw new Error('asset holding must not be empty');
+      }
+  
+      // Get the state from the ledger
+      let Avalbytes = await stub.getState(A);
+      if (!Avalbytes) {
+        throw new Error('Failed to get state of asset holder A');
+      }
+      let Aval = parseInt(Avalbytes.toString());
+  
+      let Bvalbytes = await stub.getState(B);
+      if (!Bvalbytes) {
+        throw new Error('Failed to get state of asset holder B');
+      }
+  
+      let Bval = parseInt(Bvalbytes.toString());
+      // Perform the execution
+      let amount = parseInt(args[2]);
+      if (typeof amount !== 'number') {
+        throw new Error('Expecting integer value for amount to be transaferred');
+      }
+  
+      Aval = Aval - amount;
+      Bval = Bval + amount;
+      console.info(util.format('Aval = %d, Bval = %d\n', Aval, Bval));
+  
+      // Write the states back to the ledger
+      await stub.putState(A, Buffer.from(Aval.toString()));
+      await stub.putState(B, Buffer.from(Bval.toString()));
+  
+    }
+  
+    // Deletes an entity from state
+    async delete(stub, args) {
+      if (args.length != 1) {
+        throw new Error('Incorrect number of arguments. Expecting 1');
+      }
+  
+      let A = args[0];
+  
+      // Delete the key from the state in ledger
+      await stub.deleteState(A);
+    }
+  
+    // query callback representing the query of a chaincode
+    async query(stub, args) {
+      if (args.length != 1) {
+        throw new Error('Incorrect number of arguments. Expecting name of the person to query')
+      }
+  
+      let jsonResp = {};
+      let A = args[0];
+  
+      // Get the state from the ledger
+      let Avalbytes = await stub.getState(A);
+      if (!Avalbytes) {
+        jsonResp.error = 'Failed to get state for ' + A;
+        throw new Error(JSON.stringify(jsonResp));
+      }
+  
+      jsonResp.name = A;
+      jsonResp.amount = Avalbytes.toString();
+      console.info('Query Response:');
+      console.info(jsonResp);
+      return Avalbytes;
+    }
+  };
+  
+  shim.start(new Chaincode());
+  ```
+
+  
+
 - 安装链码
 
   ![avatar](https://upload-images.jianshu.io/upload_images/13765375-d768d6358d0dffa8.jpg)
@@ -311,6 +448,22 @@ cd fabric-samples
 
 - 复制并粘贴以下内容
 
+  OrdererOrgs:排序节点架构
+  
+  Domain：域名
+  
+  Specs：主机名
+  
+  PeerOrgs：节点架构
+  
+  Template：组织中拥有多少个peer
+  
+  Users：组织中拥有的用户数量
+  
+  一个组织中可以有多个peer同步记账，一个组织可以有一个或多个用户，一个组织中必须有一个admin管理员
+  
+  EnableNodeOUs：允许节点 OUS （out of service）
+  
   ```
   OrdererOrgs:
     - Name: Orderer
@@ -324,7 +477,7 @@ cd fabric-samples
         - Hostname: orderer5
   
   PeerOrgs:
-    - Name: Org1
+  - Name: Org1
       Domain: org1.example.com
       EnableNodeOUs: true
       Template:
@@ -340,7 +493,7 @@ cd fabric-samples
         Count: 1
   
   ```
-
+  
   
 
 ## 创世区块配置和生成
@@ -351,6 +504,295 @@ cd fabric-samples
   ../bin/cryptogen generate --config ./crypto-config.yaml
   ```
   
+
+这个过程生成了crypto-config文件夹，里面包含了orderer机构信息和peer的机构信息，缩略图如下图所示：
+
+![avatar](https://upload-images.jianshu.io/upload_images/13765375-3d57966d506816f4.png)
+
+详细内容如下：
+
+```
+.
+├── ordererOrganizations
+│   └── example.com
+│       ├── ca
+│       │   ├── 9a358c767605d638a9da1dd23e02c47bd85b93e443a48bc9b63c0e9aa08cde7b_sk
+│       │   └── ca.example.com-cert.pem
+│       ├── msp
+│       │   ├── admincerts
+│       │   ├── cacerts
+│       │   │   └── ca.example.com-cert.pem
+│       │   ├── config.yaml
+│       │   └── tlscacerts
+│       │       └── tlsca.example.com-cert.pem
+│       ├── orderers
+│       │   ├── orderer.example.com
+│       │   │   ├── msp
+│       │   │   │   ├── admincerts
+│       │   │   │   ├── cacerts
+│       │   │   │   │   └── ca.example.com-cert.pem
+│       │   │   │   ├── config.yaml
+│       │   │   │   ├── keystore
+│       │   │   │   │   └── e395dbcc30c16d6429f7313f1a184f97c6f1eaf879ce0fe4fac906eedc33ef18_sk
+│       │   │   │   ├── signcerts
+│       │   │   │   │   └── orderer.example.com-cert.pem
+│       │   │   │   └── tlscacerts
+│       │   │   │       └── tlsca.example.com-cert.pem
+│       │   │   └── tls
+│       │   │       ├── ca.crt
+│       │   │       ├── server.crt
+│       │   │       └── server.key
+│       │   ├── orderer2.example.com
+│       │   │   ├── msp
+│       │   │   │   ├── admincerts
+│       │   │   │   ├── cacerts
+│       │   │   │   │   └── ca.example.com-cert.pem
+│       │   │   │   ├── config.yaml
+│       │   │   │   ├── keystore
+│       │   │   │   │   └── 78e7107e78a872f03658287faecd9cd08307147d08322ad82d224f0c15f40d76_sk
+│       │   │   │   ├── signcerts
+│       │   │   │   │   └── orderer2.example.com-cert.pem
+│       │   │   │   └── tlscacerts
+│       │   │   │       └── tlsca.example.com-cert.pem
+│       │   │   └── tls
+│       │   │       ├── ca.crt
+│       │   │       ├── server.crt
+│       │   │       └── server.key
+│       │   ├── orderer3.example.com
+│       │   │   ├── msp
+│       │   │   │   ├── admincerts
+│       │   │   │   ├── cacerts
+│       │   │   │   │   └── ca.example.com-cert.pem
+│       │   │   │   ├── config.yaml
+│       │   │   │   ├── keystore
+│       │   │   │   │   └── cbf99faab69480eb84ec8a22745efe043fcaaada3c5707b146bee127514e060a_sk
+│       │   │   │   ├── signcerts
+│       │   │   │   │   └── orderer3.example.com-cert.pem
+│       │   │   │   └── tlscacerts
+│       │   │   │       └── tlsca.example.com-cert.pem
+│       │   │   └── tls
+│       │   │       ├── ca.crt
+│       │   │       ├── server.crt
+│       │   │       └── server.key
+│       │   ├── orderer4.example.com
+│       │   │   ├── msp
+│       │   │   │   ├── admincerts
+│       │   │   │   ├── cacerts
+│       │   │   │   │   └── ca.example.com-cert.pem
+│       │   │   │   ├── config.yaml
+│       │   │   │   ├── keystore
+│       │   │   │   │   └── 04ddf63116297cdcf825d9cd764dd554646a77a1ab1abd7c1c7d4d50885c2152_sk
+│       │   │   │   ├── signcerts
+│       │   │   │   │   └── orderer4.example.com-cert.pem
+│       │   │   │   └── tlscacerts
+│       │   │   │       └── tlsca.example.com-cert.pem
+│       │   │   └── tls
+│       │   │       ├── ca.crt
+│       │   │       ├── server.crt
+│       │   │       └── server.key
+│       │   └── orderer5.example.com
+│       │       ├── msp
+│       │       │   ├── admincerts
+│       │       │   ├── cacerts
+│       │       │   │   └── ca.example.com-cert.pem
+│       │       │   ├── config.yaml
+│       │       │   ├── keystore
+│       │       │   │   └── d9f3aab206cf9de656215f5a6838cf24d9c7f372f474012c90e0fb6bdd0d2f46_sk
+│       │       │   ├── signcerts
+│       │       │   │   └── orderer5.example.com-cert.pem
+│       │       │   └── tlscacerts
+│       │       │       └── tlsca.example.com-cert.pem
+│       │       └── tls
+│       │           ├── ca.crt
+│       │           ├── server.crt
+│       │           └── server.key
+│       ├── tlsca
+│       │   ├── ad161eaa3207c26829d091f8982a21f9cd82e68e3c67ea1d06d2cb96f4bb7408_sk
+│       │   └── tlsca.example.com-cert.pem
+│       └── users
+│           └── Admin@example.com
+│               ├── msp
+│               │   ├── admincerts
+│               │   ├── cacerts
+│               │   │   └── ca.example.com-cert.pem
+│               │   ├── config.yaml
+│               │   ├── keystore
+│               │   │   └── 0a5a27103f92307ffaf5fff8454f67ad4320f16c0d139e6e63a110e2af7b3f0d_sk
+│               │   ├── signcerts
+│               │   │   └── Admin@example.com-cert.pem
+│               │   └── tlscacerts
+│               │       └── tlsca.example.com-cert.pem
+│               └── tls
+│                   ├── ca.crt
+│                   ├── client.crt
+│                   └── client.key
+└── peerOrganizations
+    ├── org1.example.com
+    │   ├── ca
+    │   │   ├── b4a8e99a2db4385b3c4b95afa99c9e4cd795e8eec08a1ac65b33d8613bb6072d_sk
+    │   │   └── ca.org1.example.com-cert.pem
+    │   ├── msp
+    │   │   ├── admincerts
+    │   │   ├── cacerts
+    │   │   │   └── ca.org1.example.com-cert.pem
+    │   │   ├── config.yaml
+    │   │   └── tlscacerts
+    │   │       └── tlsca.org1.example.com-cert.pem
+    │   ├── peers
+    │   │   ├── peer0.org1.example.com
+    │   │   │   ├── msp
+    │   │   │   │   ├── admincerts
+    │   │   │   │   ├── cacerts
+    │   │   │   │   │   └── ca.org1.example.com-cert.pem
+    │   │   │   │   ├── config.yaml
+    │   │   │   │   ├── keystore
+    │   │   │   │   │   └── d447d4fca3ed19845e9c25bfeacb4010f05aa5a160b02834632a97ed32986c56_sk
+    │   │   │   │   ├── signcerts
+    │   │   │   │   │   └── peer0.org1.example.com-cert.pem
+    │   │   │   │   └── tlscacerts
+    │   │   │   │       └── tlsca.org1.example.com-cert.pem
+    │   │   │   └── tls
+    │   │   │       ├── ca.crt
+    │   │   │       ├── server.crt
+    │   │   │       └── server.key
+    │   │   └── peer1.org1.example.com
+    │   │       ├── msp
+    │   │       │   ├── admincerts
+    │   │       │   ├── cacerts
+    │   │       │   │   └── ca.org1.example.com-cert.pem
+    │   │       │   ├── config.yaml
+    │   │       │   ├── keystore
+    │   │       │   │   └── 4b4ee828029e344b6e8f03ad312c80694eeb70c2934fc8f09f93628a347bb106_sk
+    │   │       │   ├── signcerts
+    │   │       │   │   └── peer1.org1.example.com-cert.pem
+    │   │       │   └── tlscacerts
+    │   │       │       └── tlsca.org1.example.com-cert.pem
+    │   │       └── tls
+    │   │           ├── ca.crt
+    │   │           ├── server.crt
+    │   │           └── server.key
+    │   ├── tlsca
+    │   │   ├── aa33ce77e5525846ea9c162c069b83d26d1ebb4e5cf0af05bf80a1045e209ae0_sk
+    │   │   └── tlsca.org1.example.com-cert.pem
+    │   └── users
+    │       ├── Admin@org1.example.com
+    │       │   ├── msp
+    │       │   │   ├── admincerts
+    │       │   │   ├── cacerts
+    │       │   │   │   └── ca.org1.example.com-cert.pem
+    │       │   │   ├── config.yaml
+    │       │   │   ├── keystore
+    │       │   │   │   └── 35a1fac79974418df860d5a31b0869e46428264a68453c278bd41d664e9c9ee4_sk
+    │       │   │   ├── signcerts
+    │       │   │   │   └── Admin@org1.example.com-cert.pem
+    │       │   │   └── tlscacerts
+    │       │   │       └── tlsca.org1.example.com-cert.pem
+    │       │   └── tls
+    │       │       ├── ca.crt
+    │       │       ├── server.crt
+    │       │       └── server.key
+    │       └── User1@org1.example.com
+    │           ├── msp
+    │           │   ├── admincerts
+    │           │   ├── cacerts
+    │           │   │   └── ca.org1.example.com-cert.pem
+    │           │   ├── config.yaml
+    │           │   ├── keystore
+    │           │   │   └── fcf4077184bc0d901a1cc2d2127b684e3d5ea931f8d60dd5bb0f41101db9be15_sk
+    │           │   ├── signcerts
+    │           │   │   └── User1@org1.example.com-cert.pem
+    │           │   └── tlscacerts
+    │           │       └── tlsca.org1.example.com-cert.pem
+    │           └── tls
+    │               ├── ca.crt
+    │               ├── client.crt
+    │               └── client.key
+    └── org2.example.com
+        ├── ca
+        │   ├── 1d916111e61f20e8c588f3879608f88c620086821113416a4e08f38e7742bd73_sk
+        │   └── ca.org2.example.com-cert.pem
+        ├── msp
+        │   ├── admincerts
+        │   ├── cacerts
+        │   │   └── ca.org2.example.com-cert.pem
+        │   ├── config.yaml
+        │   └── tlscacerts
+        │       └── tlsca.org2.example.com-cert.pem
+        ├── peers
+        │   ├── peer0.org2.example.com
+        │   │   ├── msp
+        │   │   │   ├── admincerts
+        │   │   │   ├── cacerts
+        │   │   │   │   └── ca.org2.example.com-cert.pem
+        │   │   │   ├── config.yaml
+        │   │   │   ├── keystore
+        │   │   │   │   └── a964fa43639583a3f01f5aec0506140ed4c7547965445b3b46a0f7a9d4945981_sk
+        │   │   │   ├── signcerts
+        │   │   │   │   └── peer0.org2.example.com-cert.pem
+        │   │   │   └── tlscacerts
+        │   │   │       └── tlsca.org2.example.com-cert.pem
+        │   │   └── tls
+        │   │       ├── ca.crt
+        │   │       ├── server.crt
+        │   │       └── server.key
+        │   └── peer1.org2.example.com
+        │       ├── msp
+        │       │   ├── admincerts
+        │       │   ├── cacerts
+        │       │   │   └── ca.org2.example.com-cert.pem
+        │       │   ├── config.yaml
+        │       │   ├── keystore
+        │       │   │   └── 322ea700b2ca7002b13845a4555c9d9d457d7669903cdf5148aa03544c400eaf_sk
+        │       │   ├── signcerts
+        │       │   │   └── peer1.org2.example.com-cert.pem
+        │       │   └── tlscacerts
+        │       │       └── tlsca.org2.example.com-cert.pem
+        │       └── tls
+        │           ├── ca.crt
+        │           ├── server.crt
+        │           └── server.key
+        ├── tlsca
+        │   ├── df907bf13068bcc7063d3163bca2ca3677b1e736ede10bc52e8b10a5acf8eaca_sk
+        │   └── tlsca.org2.example.com-cert.pem
+        └── users
+            ├── Admin@org2.example.com
+            │   ├── msp
+            │   │   ├── admincerts
+            │   │   ├── cacerts
+            │   │   │   └── ca.org2.example.com-cert.pem
+            │   │   ├── config.yaml
+            │   │   ├── keystore
+            │   │   │   └── c9d2a4b539270657638a9a3f2c5265704c0505b73433fe5691677cef0d5bc356_sk
+            │   │   ├── signcerts
+            │   │   │   └── Admin@org2.example.com-cert.pem
+            │   │   └── tlscacerts
+            │   │       └── tlsca.org2.example.com-cert.pem
+            │   └── tls
+            │       ├── ca.crt
+            │       ├── server.crt
+            │       └── server.key
+            └── User1@org2.example.com
+                ├── msp
+                │   ├── admincerts
+                │   ├── cacerts
+                │   │   └── ca.org2.example.com-cert.pem
+                │   ├── config.yaml
+                │   ├── keystore
+                │   │   └── 1ac8047a9d066e07bf46edbab8a21871400e2fe10498b3e42aea82b8040cef36_sk
+                │   ├── signcerts
+                │   │   └── User1@org2.example.com-cert.pem
+                │   └── tlscacerts
+                │       └── tlsca.org2.example.com-cert.pem
+                └── tls
+                    ├── ca.crt
+                    ├── client.crt
+                    └── client.key
+
+141 directories, 133 files
+
+```
+
+
 
 ## 配置configtx.yaml文件
 
@@ -1080,6 +1522,8 @@ peer chaincode query -C mychannel -n mycc -c '{"Args":["query","a"]}'
 # 链码的编写
 
 ## 链码开发环境搭建
+
+
 
 ## 链码架构
 
