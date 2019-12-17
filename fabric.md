@@ -498,7 +498,7 @@ cd fabric-samples
 
 ## 创世区块配置和生成
 
-- 配置生成创世区块
+- 加密证书生成
 
   ```
   ../bin/cryptogen generate --config ./crypto-config.yaml
@@ -508,6 +508,12 @@ cd fabric-samples
 这个过程生成了crypto-config文件夹，里面包含了orderer机构信息和peer的机构信息，缩略图如下图所示：
 
 ![avatar](https://upload-images.jianshu.io/upload_images/13765375-3d57966d506816f4.png)
+
+ca：证书
+
+msp：类似于会员卡的意思
+
+tls：下一代的互联网协议（lls）
 
 详细内容如下：
 
@@ -800,6 +806,9 @@ cd fabric-samples
 touch configtx.yaml
 vim configtx.yaml
 ```
+Organizations：整个区块链网络所有参与的组织信息
+
+
 
 ```
 ---
@@ -1395,7 +1404,7 @@ Profiles:
     cd ../
     ```
 
-## 创建通道
+## 创建创世区块和创建通道
 
 ```
 ../bin/configtxgen -profile TwoOrgsOrdererGenesis -outputBlock ./channel-artifacts/genesis.block
@@ -1523,7 +1532,34 @@ peer chaincode query -C mychannel -n mycc -c '{"Args":["query","a"]}'
 
 ## 链码开发环境搭建
 
-
+- 切换到basic-network目录
+- 修改 basic-network的docker-compose.yml
+- 修改 脚本 start.sh
+- 启动脚本 'start.h'
 
 ## 链码架构
+
+```js
+const Chaincode = class {
+    async Init(stub) {  // 初始化方法
+         await stub.putState(key, Buffer.from(aStringValue)); //可以初始化一些世界状态
+         return shim.success(Buffer.from('Initialized Successfully!'));
+    }
+
+	async Invoke(stub) {
+   		let ret = stub.getFunctionAndParameters(); //获取函数名和参数
+   		console.info(ret);
+   		let method = this[ret.fcn]; //函数
+   		let payload = await method(stub, ret.params); //调用函数
+   		return shim.success(payload);
+	}
+
+	async xxx(stub, args) {//示例函数
+    	return "xxx";
+	}
+
+};
+shim.start(new Chaincode());
+
+```
 
