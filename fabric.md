@@ -1404,7 +1404,7 @@ Profiles:
     cd ../
     ```
 
-## 创建创世区块和创建通道
+## 创建创世区块
 
 ```
 ../bin/configtxgen -profile TwoOrgsOrdererGenesis -outputBlock ./channel-artifacts/genesis.block
